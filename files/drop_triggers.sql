@@ -1,0 +1,9 @@
+DROP TRIGGER KATEGORIE_id_TRG;
+DROP TRIGGER PREDMET_id_TRG;
+DROP TRIGGER ROZVRHOVA_AKCE_id_TRG;
+DROP TRIGGER UCEBNA_id_TRG;
+DROP TRIGGER UCITEL_id_TRG;
+DROP TRIGGER trigger_kapacita_check;
+DROP TRIGGER trigger_datum_akce_check;
+DROP TRIGGER trigger_check_teacher_available;
+DROP TRIGGER trigger_check_ucebna_available;

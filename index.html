@@ -1,173 +1,253 @@
-
 <!DOCTYPE html>
 <html lang="cs">
-    <head>
-        <meta charset="UTF-8" />
-        <title>DORDB projekt</title>
 
-        <style>        
-            body {
-                font-family: Calibri, sans-serif;
-                font-size: 100%;
-                line-height: 160%;
-            }
-            
-            .okraj {
-                max-width: 999px;
-                margin: 0 auto;
-                box-shadow: 0 0 100px #888;
-                padding: 10px;
-            }
-            
-            h1, h2, h3 {
-                background-color: lightblue;
-                padding: 5px;
-                padding-left: 1em;
-            }
-            h1 {
-                text-align: center;
-            }
-            a, a:active, a:visited {
-                color: #0031ec;
-            }
-            
-            a:hover {
-                color:#ec0000;
-            }
-            
-            .info {
-                background-color: yellow;
-                padding: 1em;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="okraj">
-            <h1>Výukový systém univerzity - projekt DORDB</h1>
-            
-            <p><strong>Autor:</strong> David Baláček, David Halama</p>
-            
-            <h2>1. E-R diagram</h2>
-			<p style="text-align: center;"><a href="./files/logical.png"><img src="./files/logical.png" alt="er_diagram" title="er_diagram" width="600" /></a></p>	
-            <h2>2. Slovní popis dodatečných integritních omezení</h2>
-              <h3>2.1. Triviální integritiní omezení</h3>
-			   <ul>
-                <li>Tabulka UCITEL
-                    <ul>
-                        <li>Atribut <em>id</em> - umělý primární klíč. Musí být jedinečný a nesmí být NULL.</li>
-                        <li>Atributy <em>jmeno</em>, <em>prijmeni</em>, <em>telefon</em>, <em>fakulta</em> nesmí být NULL.</li>
-                    </ul>
-                </li>
-				<li>Tabulka KATEGORIE
-                    <ul>
-                        <li>Atribut <em>id</em> - umělý primární klíč. Musí být jedinečný a nesmí být NULL.</li>
-                        <li>Atribut <em>druh</em> nesmí být NULL.</li>
-						<li>Atribut <em>semestr</em> nesmí být NULL a musí být výčtu letní/zimní.</li>
-                    </ul>
-                </li>
-				<li>Tabulka ROZVRHOVA_AKCE
-                    <ul>
-                        <li>Atribut <em>id</em> - umělý primární klíč. Musí být jedinečný a nesmí být NULL.</li>
-                        <li>Atribut <em>cas</em> nesmí být NULL a musí být v rozmezí od 8:00 do 20:00.</li>
-						<li>Atributy <em>pocetHodin</em>, <em>pocetStudentu</em> nesmí být NULL a nesmí být menší než nula.</li>
-                    </ul>
-                </li>
-				<li>Tabulka PREDMET
-                    <ul>
-                        <li>Atribut <em>id</em> - umělý primární klíč. Musí být jedinečný a nesmí být NULL.</li>
-						<li>Atributy <em>nazev</em>, <em>pozadavky</em> nesmí být NULL.</li>
-						<li>Atribut <em>zpusobZakonceni</em> nesmí být NULL a musí být výčtu zkouška/zápočet.</li>
-                    </ul>
-                </li>
-				<li>Tabulka UCEBNA
-                    <ul>
-                        <li>Atribut <em>id</em> - umělý primární klíč. Musí být jedinečný a nesmí být NULL.</li>
-						<li>Atributy <em>nazev</em>, <em>budova</em> nesmí být NULL.</li>
-						<li>Atribut <em>kapacita</em>, nesmí být NULL a musí být větší než nula.</li>
-                    </ul>
-                </li>
-			  </ul>
-              <h3>2.1. Netriviální integritní omezení</h3>
-			  <ul>
-				<li>Tabulka REL_RA_UCEBNA
-                    <ul>
-                        <li>Tabulka spojující učebnu a rozvrhovou akcí nesmí mít učebnu s menší kapacitou, než je počet studentů rozvrhové akce.</li>
-                    </ul>
-					<ul>
-                        <li>Rozvrhová akce nesmí obsahovat stejný datum a čas pro jednu učebnu, zároveň po celou dobu trvání rozvrhové akce (indikátor - počet hodin na RA) nesmí být učebna 
-                            obsazena jinou rozvrhovou akcí. Trigger aplikovany na REL_RA_UCEBNA, před provázáním závislostí.</li>
-                    </ul>
-                </li>
-				<li>Tabulka ROZVRHOVA_AKCE
-                    <ul>
-                        <li>Učitel nesmí mít přiřazené dvě rozvrhové akce konající 
-						ve stejný den a hodinu, opět s ohledem na rozsah - délku, rozvrhové akce. Trigger aplikovaný na tabulku ROZVRHOVA_AKCE.</li>
-						<li>Atribut <em>datum</em> nesmí být NULL a nesmí být v minulosti v porovnání s dnem insertu. Realizováno triggerem, jelikož dle dokumentace oracle nepodporuje jednoduchý constrain.</li>
-					</ul>
-                </li>
-				<li>Všechny tabulky kromě REL_RA_UCEBNA
-                    <ul>
-                        <li>Všechny tabulky mají vytvořený trigger, který před insertem ověří jestli je specifikováné ID, pokud je identifikátor nespeficikován je ID samo doplněno pomocí sequence při insertu.</li>
-					</ul>
-                </li>
-				</ul>
-              
-            <h2>3. Slovní návrh API rozhraní „business logiky“</h2>
-           
-			<h3>Vytvoření rozvrhové akce</h3>
-			<p><strong>Název: </strong>vytvor_rozvrhovou_akci</p>
-			<p><strong>Parametry: </strong> cas (TIMESTAMP), datum (DATE), pocetHodin (NUMBER), pocetStudentu (NUMBER), ucitel_id, ucebna_id, predmet_id, kategorie_id</p>
-			<p><strong>Popis: </strong> Pocedura vytvoří nový záznam v tabulce ROZVRHOVA_AKCE za předpokladu, že jsou splněny všechny podmínky. Zároveň vloží záznam do tabulky REL_RA_UCEBNA (M:N relace) a prováže všechny entity v modelu.</p> 
-                  
-			<h3>Vytvoření nového předmětu se závislostmi</h3>
-			<p><strong>Název: </strong>vytvor_novy_predmet</p>
-			<p><strong>Parametry: </strong> ucitel_id, kategorie_id, ucebna_id, nazev (VARCHAR2), popis (VARCHAR2), pozadavky (VARCHAR2), datumakci (DATE), zpusobZakonceni (VARCHAR2), delkaAkci (NUMBER), pocetStudentuRA (NUMBER)</p>
-            <p><strong>Popis: </strong> Procedura vytvoří předmět a předmětu vytvoří tři akce o dané délce. Rozvrhové akce poté naváže učiteli a zároveň zařadí do rozvrhu učebny.
-            Pokud učebna nemá dostatečné časové rozmezí pro rozvrhové akce, zahlásí procedura vlastní výjimku.</p> 
+<head>
+  <meta charset="UTF-8"/>
+  <title>DORDB projekt</title>
 
-                 				  
-            <h2>4. Pět slovně formulovaných dotazů nad schématem</h2>
-              <ol>
-				<li>Seznam učitelů a jejich předmětů, počet hodin vyučujícího seřazeno podle předmětu</li>
-				<li>Zobraz učebny a předměty vyučované v učebně </li>
-				<li>Zobraz počet hodin vyučovanych předmetu v letním semestru a v zimním, spojene dohromady,
-				ale jen pro předměty, které mají naplanováno více jak tři rozvrhové akce</li>
-				<li>Seznam odučenych hodin učitele za týden, tri mesice, rok od dnešního dne</li>
-				<li>Zobraz učebny, kde je počet studentů menši jak půlka kapacity učebny</li>
-				<li>Seznam učitelů a vyučovaných předmětů, které probíhají v zadaný čas, včetně délky hodiny </li>
-			</ol>
-			<p><strong>SQL skript:</strong> <a href="./files/sql_selects.sql">sql_selects.sql</a></p>
-            <h2>5. Skript, který vytvoří databázové schéma odpovídající E-R diagramu</h2>
-            <p><strong>SQL skript pro vytvoření struktury:</strong> <a href="./files/create_database_ddl.sql">create_database_ddl.sql</a></p>
-			<p><strong>SQL skript pro dropnutí struktury:</strong> <a href="./files/drop_database_ddl.sql">drop_database_ddl.sql</a></p>
-			<h2>6. Skript, který vytvoří v databázovém schématu dodatečná integritní omezení</h2> 
-              <p><strong>Skript pro vytvoření:</strong> <a href="./files/create_triggers.sql">create_triggers.sql</a></p>
-			  <p><strong>Skript pro dropnutí:</strong> <a href="./files/drop_triggers.sql">drop_triggers.sql</a></p>
-			<h2>7. Skript, který naplní tabulky testovacími daty</h2>  
-              <p><strong>Skript pro insert dat:</strong> <a href="./files/insert_data.sql">insert_data.sql</a></p>
-			  <p><strong>Skript pro smazání dat:</strong> <a href="./files/delete_data.sql">delete_data.sql</a></p>
-            <h2>8. Skript, který provede postupně všechny navržené dotazy z bodu 4</h2>
-             
-            <h2>9. Skript, který se pokusí porušit všechna dodatečná integritní omezení</h2>
-              
-            <h2>10. Skript pro vytvoření balíku (package) a procedur „business logiky“</h2>
-              <p><strong>Skript:</strong> <a href="./files/sql_procedury.sql">sql_procedury.sql</a></p>
-            <h2>11. Ověření procedur „business logiky“</h2>
-             
-            <h2>12. Skript, který doplní do tabulky automaticky dopočítávaný sloupec</h2>
-              
-            <h2>13. Skript, který vytvoří úložiště ještě jednou v „objektové“ podobě</h2>
-          
-            <h2>14. Skript, který provede pět dotazů znovu, nad objektovými tabulkami</h2>
-              
-            <h2>15. Navrhněte slovně fakta a dimenze pro datový sklad</h2>
-            
-            
-            
-            
-            <h2 style="margin-top: 50px;">Skript pro vyčištění databáze</h2>
-              <p style="margin-bottom: 10px; padding-bottom: 15px;"><strong>Skript:</strong> <a href="./files/drop_database_ddl.sql">
-			  drop_database_ddl.sql</a></p>
+  <style>
+      body {
+          font-family: Calibri, sans-serif;
+          font-size: 100%;
+          line-height: 160%;
+      }
+
+      .okraj {
+          max-width: 999px;
+          margin: 0 auto;
+          box-shadow: 0 0 100px #888;
+          padding: 10px;
+      }
+
+      h1,
+      h2,
+      h3 {
+          background-color: lightblue;
+          padding: 5px;
+          padding-left: 1em;
+      }
+
+      h1 {
+          text-align: center;
+      }
+
+      a,
+      a:active,
+      a:visited {
+          color: #0031ec;
+      }
+
+      a:hover {
+          color: #ec0000;
+      }
+
+      .info {
+          background-color: yellow;
+          padding: 1em;
+      }
+  </style>
+</head>
+
+<body>
+<div class="okraj">
+  <h1>Výukový systém univerzity - projekt DORDB</h1>
+
+  <p><strong>Autor:</strong> David Baláček, David Halama</p>
+
+  <h2>1. E-R diagram</h2>
+  <p style="text-align: center;">
+    <a href="./files/logical.png"><img src="./files/logical.png" alt="er_diagram" title="er_diagram" width="600"/></a>
+  </p>
+  <h2>2. Slovní popis dodatečných integritních omezení</h2>
+  <h3>2.1. Triviální integritiní omezení</h3>
+  <ul>
+    <li>Tabulka UCITEL
+      <ul>
+        <li>Atribut <em>id</em> - umělý primární klíč. Musí být jedinečný a nesmí být NULL.</li>
+        <li>Atributy <em>jmeno</em>, <em>prijmeni</em>, <em>telefon</em>, <em>fakulta</em> nesmí být NULL.</li>
+      </ul>
+    </li>
+    <li>Tabulka KATEGORIE
+      <ul>
+        <li>Atribut <em>id</em> - umělý primární klíč. Musí být jedinečný a nesmí být NULL.</li>
+        <li>Atribut <em>druh</em> nesmí být NULL.</li>
+        <li>Atribut <em>semestr</em> nesmí být NULL a musí být výčtu letní/zimní.</li>
+      </ul>
+    </li>
+    <li>Tabulka ROZVRHOVA_AKCE
+      <ul>
+        <li>Atribut <em>id</em> - umělý primární klíč. Musí být jedinečný a nesmí být NULL.</li>
+        <li>Atribut <em>cas</em> nesmí být NULL a musí být v rozmezí od 8:00 do 20:00.</li>
+        <li>Atributy <em>pocetHodin</em>, <em>pocetStudentu</em> nesmí být NULL a nesmí být menší než nula.</li>
+      </ul>
+    </li>
+    <li>Tabulka PREDMET
+      <ul>
+        <li>Atribut <em>id</em> - umělý primární klíč. Musí být jedinečný a nesmí být NULL.</li>
+        <li>Atributy <em>nazev</em>, <em>pozadavky</em> nesmí být NULL.</li>
+        <li>Atribut <em>zpusobZakonceni</em> nesmí být NULL a musí být výčtu zkouška/zápočet.</li>
+      </ul>
+    </li>
+    <li>Tabulka UCEBNA
+      <ul>
+        <li>Atribut <em>id</em> - umělý primární klíč. Musí být jedinečný a nesmí být NULL.</li>
+        <li>Atributy <em>nazev</em>, <em>budova</em> nesmí být NULL.</li>
+        <li>Atribut <em>kapacita</em>, nesmí být NULL a musí být větší než nula.</li>
+      </ul>
+    </li>
+  </ul>
+  <h3>2.1. Netriviální integritní omezení</h3>
+  <ul>
+    <li>Tabulka REL_RA_UCEBNA
+      <ul>
+        <li>Tabulka spojující učebnu a rozvrhovou akcí nesmí mít učebnu s menší kapacitou, než je počet studentů
+          rozvrhové akce.
+        </li>
+      </ul>
+      <ul>
+        <li>Rozvrhová akce nesmí obsahovat stejný datum a čas pro jednu učebnu, zároveň po celou dobu trvání rozvrhové
+          akce (indikátor - počet hodin na RA) nesmí být učebna
+          obsazena jinou rozvrhovou akcí. Trigger aplikovany na REL_RA_UCEBNA, před provázáním závislostí.
+        </li>
+      </ul>
+    </li>
+    <li>Tabulka ROZVRHOVA_AKCE
+      <ul>
+        <li>Učitel nesmí mít přiřazené dvě rozvrhové akce konající
+          ve stejný den a hodinu, opět s ohledem na rozsah - délku, rozvrhové akce. Trigger aplikovaný na tabulku
+          ROZVRHOVA_AKCE.
+        </li>
+        <li>Atribut <em>datum</em> nesmí být NULL a nesmí být v minulosti v porovnání s dnem insertu. Realizováno
+          triggerem, jelikož dle dokumentace oracle nepodporuje jednoduchý constrain.
+        </li>
+      </ul>
+    </li>
+    <li>Všechny tabulky kromě REL_RA_UCEBNA
+      <ul>
+        <li>Všechny tabulky mají vytvořený trigger, který před insertem ověří jestli je specifikováné ID, pokud je
+          identifikátor nespeficikován je ID samo doplněno pomocí sequence při insertu.
+        </li>
+      </ul>
+    </li>
+  </ul>
+
+  <h2>3. Slovní návrh API rozhraní „business logiky“</h2>
+
+  <h3>Vytvoření rozvrhové akce</h3>
+  <p><strong>Název: </strong>vytvor_rozvrhovou_akci</p>
+  <p><strong>Parametry: </strong> cas (TIMESTAMP), datum (DATE), pocetHodin (NUMBER), pocetStudentu (NUMBER), ucitel_id,
+    ucebna_id, predmet_id, kategorie_id</p>
+  <p><strong>Popis: </strong> Pocedura vytvoří nový záznam v tabulce ROZVRHOVA_AKCE za předpokladu, že jsou splněny
+    všechny podmínky. Zároveň vloží záznam do tabulky REL_RA_UCEBNA (M:N relace) a prováže všechny entity v modelu.</p>
+
+  <h3>Vytvoření nového předmětu se závislostmi</h3>
+  <p><strong>Název: </strong>vytvor_novy_predmet</p>
+  <p><strong>Parametry: </strong> ucitel_id, kategorie_id, ucebna_id, nazev (VARCHAR2), popis (VARCHAR2), pozadavky
+    (VARCHAR2), datumakci (DATE), zpusobZakonceni (VARCHAR2), delkaAkci (NUMBER), pocetStudentuRA (NUMBER)</p>
+  <p><strong>Popis: </strong> Procedura vytvoří předmět a předmětu vytvoří tři akce o dané délce. Rozvrhové akce poté
+    naváže učiteli a zároveň zařadí do rozvrhu učebny.
+    Pokud učebna nemá dostatečné časové rozmezí pro rozvrhové akce, zahlásí procedura vlastní výjimku.</p>
+
+  <h2>4. Pět slovně formulovaných dotazů nad schématem</h2>
+  <ol>
+    <li>Seznam učitelů a jejich předmětů, počet hodin vyučujícího seřazeno podle předmětu</li>
+    <li>Zobraz učebny a předměty vyučované v učebně</li>
+    <li>Zobraz počet hodin vyučovanych předmetu v letním semestru a v zimním, spojene dohromady,
+      ale jen pro předměty, které mají naplanováno více jak tři rozvrhové akce
+    </li>
+    <li>Seznam odučenych hodin učitele za týden, tri mesice, rok od dnešního dne</li>
+    <li>Zobraz učebny, kde je počet studentů menši jak půlka kapacity učebny</li>
+    <li>Seznam učitelů a vyučovaných předmětů, které probíhají v zadaný čas, včetně délky hodiny</li>
+  </ol>
+  <p><strong>SQL skript:</strong>
+    <a href="./files/sql_selects.sql">sql_selects.sql</a>
+  </p>
+
+  <h2>5. Skript, který vytvoří databázové schéma odpovídající E-R diagramu</h2>
+  <p><strong>SQL skript pro vytvoření struktury:</strong>
+    <a href="./files/create_database_ddl.sql">create_database_ddl.sql</a>
+  </p>
+  <p><strong>SQL skript pro dropnutí struktury:</strong>
+    <a href="./files/drop_database_ddl.sql">drop_database_ddl.sql</a>
+  </p>
+
+  <h2>6. Skript, který vytvoří v databázovém schématu dodatečná integritní omezení</h2>
+  <p><strong>Skript pro vytvoření:</strong>
+    <a href="./files/create_triggers.sql">create_triggers.sql</a>
+  </p>
+  <p><strong>Skript pro dropnutí:</strong>
+    <a href="./files/drop_triggers.sql">drop_triggers.sql</a>
+  </p>
+
+  <h2>7. Skript, který naplní tabulky testovacími daty</h2>
+  <p><strong>Skript pro insert dat:</strong>
+    <a href="./files/insert_data.sql">insert_data.sql</a>
+  </p>
+  <p><strong>Skript pro smazání dat:</strong>
+    <a href="./files/delete_data.sql">delete_data.sql</a>
+  </p>
+
+  <h2>8. Skript, který provede postupně všechny navržené dotazy z bodu 4</h2>
+  <p><strong>SQL skript:</strong>
+    <a href="./files/sql_selects.sql">sql_selects.sql</a>
+  </p>
+
+  <h2>9. Skript, který se pokusí porušit všechna dodatečná integritní omezení</h2>
+  <p><strong>SQL skript:</strong>
+    <a href="./files/try_triggers.sql">try_triggers.sql</a>
+  </p>
+
+  <h2>10. Skript pro vytvoření balíku (package) a procedur „business logiky“</h2>
+  <p><strong>Skript:</strong>
+    <a href="./files/sql_procedury.sql">sql_procedury.sql</a>
+  </p>
+
+  <h2>11. Ověření procedur „business logiky“</h2>
+  <p><strong>Skript:</strong>
+    <a href="./files/business_logic_api.sql">business_logic_api.sql</a>
+  </p>
+
+  <h2>12. Skript, který doplní do tabulky automaticky dopočítávaný sloupec</h2>
+  <p><strong>Skript:</strong>
+    <a href="./files/add_new_column.sql">add_new_column.sql</a>
+  </p>
+
+  <h2>13. Skript, který vytvoří úložiště ještě jednou v „objektové“ podobě</h2>
+  <p><strong>Skript:</strong>
+    <a href="./files/create_object_database.sql">create_object_database.sql</a>
+  </p>
+
+  <h2>14. Skript, který provede pět dotazů znovu, nad objektovými tabulkami</h2>
+  <p><strong>SQL skript:</strong>
+    <a href="./files/object_sql_selects.sql">object_sql_selects.sql</a>
+  </p>
+
+  <h2>15. Navrhněte slovně fakta a dimenze pro datový sklad</h2>
+  <p>
+    <strong>Tabulky faktů:</strong>
+    ROZVRHOVA_AKCE
+  </p>
+  <p>
+    <strong>Tabulka dimenzí:</strong>
+    UCITEL, KATEGORIE, PREDMET
+  </p>
+  <p>
+    <strong>Možné analýzy:</strong>
+  <ul>
+    <li>Nejčastěji vyučovaný předmět</li>
+    <li>Který učitel nejvíce vyučuje</li>
+    <li>Kolik má který učitel odučených hodin</li>
+    <li>Nejčastěji se vyskytující kategorie</li>
+  </ul>
+  </p>
+
+  <h2 style="margin-top: 50px;">Skript pro vyčištění databáze</h2>
+  <p style="margin-bottom: 10px; padding-bottom: 15px;"><strong>Skript:</strong>
+    <a href="./files/drop_database_ddl.sql">
+      drop_database_ddl.sql
+    </a>
+  </p>
 </div>
 </body>
+
 </html>

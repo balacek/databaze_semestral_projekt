@@ -1,0 +1,70 @@
+CREATE OR REPLACE TYPE T_KATEGORIE AS OBJECT
+  (
+    id      NUMBER ,
+    druh    VARCHAR2 (50) ,
+    semestr VARCHAR2 (50)   ) ;
+  /
+
+CREATE OR REPLACE TYPE T_PREDMET AS OBJECT
+  (
+    id              NUMBER ,
+    nazev           VARCHAR2 (100) ,
+    popis           VARCHAR2 (255) ,
+    pozadavky       VARCHAR2 (255) ,
+    zpusobZakonceni VARCHAR2 (40)   ) ;
+  /
+
+CREATE OR REPLACE TYPE T_REL_RA_UCEBNA AS OBJECT
+  (
+    ROZVRHOVA_AKCE_id NUMBER ,
+    UCEBNA_id         NUMBER   ) ;
+  /
+
+CREATE OR REPLACE TYPE T_ROZVRHOVA_AKCE AS OBJECT
+  (
+    id            NUMBER ,
+    cas           TIMESTAMP ,
+    datum         DATE ,
+    pocetHodin    NUMBER ,
+    UCITEL_id     NUMBER ,
+    KATEGORIE_id  NUMBER ,
+    PREDMET_id    NUMBER ,
+    pocetStudentu NUMBER
+  ) ;
+  /
+
+CREATE OR REPLACE TYPE T_UCEBNA AS OBJECT
+  (
+    id        NUMBER ,
+    kapacita  NUMBER ,
+    nazev     VARCHAR2 (100) ,
+    budova    CHAR (15) ,
+    laborator CHAR (1)
+  ) ;
+  /
+
+CREATE OR REPLACE TYPE T_UCITEL AS OBJECT
+  (
+    id        NUMBER ,
+    jmeno     VARCHAR2 (100) ,
+    prijmeni  VARCHAR2 (100) ,
+    telefon   NUMBER ,
+    fakulta   VARCHAR2 (255) ,
+    titulPred CHAR (15) ,
+    titulZa   CHAR (15)
+  ) ;
+  /
+
+CREATE TABLE OBJ_KATEGORIE of T_KATEGORIE;
+CREATE TABLE OBJ_PREDMET of T_PREDMET;
+CREATE TABLE OBJ_REL_RA_UCEBNA of T_REL_RA_UCEBNA;
+CREATE TABLE OBJ_ROZVRHOVA_AKCE of T_ROZVRHOVA_AKCE;
+CREATE TABLE OBJ_UCEBNA of T_UCEBNA;
+CREATE TABLE OBJ_UCITEL of T_UCITEL;
+
+INSERT INTO OBJ_KATEGORIE SELECT * FROM KATEGORIE;
+INSERT INTO OBJ_PREDMET SELECT * FROM PREDMET;
+INSERT INTO OBJ_REL_RA_UCEBNA SELECT * FROM REL_RA_UCEBNA;
+INSERT INTO OBJ_ROZVRHOVA_AKCE SELECT * FROM ROZVRHOVA_AKCE;
+INSERT INTO OBJ_UCEBNA SELECT * FROM UCEBNA;
+INSERT INTO OBJ_UCITEL SELECT id, jmeno, prijmeni, telefon, fakulta, titulPred, titulZa FROM UCITEL;

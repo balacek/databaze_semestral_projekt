@@ -1,0 +1,53 @@
+SQL> -- Vytvoøení rozvrhové akce
+SQL> BEGIN
+  2    balicek_buss_logika.vytvor_rozvrhovou_akci(TO_TIMESTAMP('10:15:46', 'HH24:MI:SS'), TO_DATE('10.5.21', 'DD.MM.YY'), 2, 12, 101, 22, 21, 12);
+  3  END;
+  4  /
+Zadaná rovzvrhová akce kryje uèitelovu výuku, prosím zvolte jiný datum nebo èas.
+Procedura: akce selhala!
+
+
+PL/SQL procedure successfully completed.
+
+SQL> 
+SQL> SELECT * FROM ROZVRHOVA_AKCE WHERE id = (SELECT MAX(id) FROM ROZVRHOVA_AKCE);
+
+        ID CAS                         DATUM    POCETHODIN  UCITEL_ID KATEGORIE_ID PREDMET_ID POCETSTUDENTU
+---------- --------------------------- -------- ---------- ---------- ------------ ---------- -------------
+      1296 01.02.21 11:12:00,000000000 10.05.21          2         22           12        235             5
+
+SQL> SELECT * FROM REL_RA_UCEBNA WHERE rozvrhova_akce_id = (SELECT MAX(id) FROM ROZVRHOVA_AKCE);
+
+ROZVRHOVA_AKCE_ID  UCEBNA_ID
+----------------- ----------
+             1296        101
+
+SQL> 
+SQL> -- Vytvoøení nového pøedmìtu se závislostmi
+SQL> BEGIN
+  2    balicek_buss_logika.vytvor_novy_predmet(22, 12, 101, 'Nový pøedmìt', 'Popis pøedmìtu', 'Požadavky pøedmìtu', TO_DATE('10.5.21', 'DD.MM.YY'), 'Zápoèet', 2, 5);
+  3  END;
+  4  /
+druhy insert1298101
+druhy insert1299101
+druhy insert1300101
+Procedura: procedura probìhla úspìšnì!
+
+
+PL/SQL procedure successfully completed.
+
+SQL> 
+SQL> SELECT * FROM PREDMET WHERE id = (SELECT MAX(id) FROM PREDMET);
+
+        ID NAZEV                                                                                                POPIS                                                                                                                                                                                                                                                           POZADAVKY                                                                                                                                                                                                                                                       ZPUSOBZAKONCENI                         
+---------- ---------------------------------------------------------------------------------------------------- --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- ----------------------------------------
+       236 Nový pøedmìt                                                                                         Popis pøedmìtu                                                                                                                                                                                                                                                  Požadavky pøedmìtu                                                                                                                                                                                                                                              Zápoèet                                 
+
+SQL> SELECT * FROM ROZVRHOVA_AKCE WHERE ROWNUM <= 3 ORDER BY id DESC;
+
+        ID CAS                         DATUM    POCETHODIN  UCITEL_ID KATEGORIE_ID PREDMET_ID POCETSTUDENTU
+---------- --------------------------- -------- ---------- ---------- ------------ ---------- -------------
+      1300 01.02.21 17:30:00,000000000 10.05.21          2         22           12        236             5
+      1299 01.02.21 15:24:00,000000000 10.05.21          2         22           12        236             5
+      1298 01.02.21 13:18:00,000000000 10.05.21          2         22           12        236             5
+

@@ -1,3 +1,4 @@
+SET ECHO ON;
 -- Vytvoření rozvrhové akce
 BEGIN
   balicek_buss_logika.vytvor_rozvrhovou_akci(TO_TIMESTAMP('10:15:46', 'HH24:MI:SS'), TO_DATE('10.5.21', 'DD.MM.YY'), 2, 12, 101, 22, 21, 12);

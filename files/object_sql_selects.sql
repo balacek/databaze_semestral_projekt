@@ -1,3 +1,4 @@
+SET AUTOTRACE ON;
 -- Seznam učitelů a jejich předmětů, počet hodin vyučujícího seřazeno podle předmětu
 select u.jmeno, u.prijmeni, p.nazev, a.pocethodin as "Vyucujici hodiny" from obj_rozvrhova_akce a join obj_ucitel u on a.ucitel_id = u.id join obj_predmet p
 on a.predmet_id = p.id order by a.predmet_id;

@@ -1,3 +1,5 @@
+SET AUTOTRACE ON;
+SET ECHO ON;
 -- Seznam učitelů a jejich předmětů, počet hodin vyučujícího seřazeno podle předmětu
 select u.jmeno, u.prijmeni, p.nazev, a.pocethodin as "Vyucujici hodiny" from rozvrhova_akce a join ucitel u on a.ucitel_id = u.id join predmet p
 on a.predmet_id = p.id order by a.predmet_id;
@@ -14,7 +16,7 @@ on a.predmet_id = p.id order by a.predmet_id;
 kategorie k on  a.kategorie_id = k.id where k.semestr = 'Zimní' AND p.id IN (select predmet_id from
 rozvrhova_akce group by predmet_id having count(id) > 3))
 UNION ALL
-(select a.pocethodin, p.nazev from rozvrhova_akce a join predmet p on a.predmet_id = p.id join 
+(select a.pocethodin, p.nazev from rozvrhova_akce a join predmet p on a.predmet_id = p.id join
 kategorie k on  a.kategorie_id = k.id where k.semestr = 'Letní' AND p.id IN (select predmet_id from rozvrhova_akce group by
 predmet_id having count(id) > 3));
 

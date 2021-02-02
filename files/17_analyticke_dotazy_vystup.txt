@@ -1,0 +1,230 @@
+SQL> SET AUTOTRACE ON;
+Autotrace Enabled
+Shows the execution plan as well as statistics of the statement.
+SQL> SET ECHO ON;
+SQL> -- Seznam všech učitelů a jejich počet hodin i s celkovymi součty, které jsou v datu od 1.1.21 pro predmět kde je učitel vyučující
+SQL> select sum(r.pocetHodin) as "Hodiny učitele", u.jmeno from rozvrhova_akce r join ucitel u on r.ucitel_id = u.id 
+  2  where r.datum > to_date('01.01.21','DD.MM.RR') and r.predmet_id = u.id group by cube(r.pocetHodin, u.jmeno) order by u.jmeno;
+
+Hodiny učitele JMENO                                                                                               
+-------------- ----------------------------------------------------------------------------------------------------
+             1 Busy                                                                                                
+             1 Busy                                                                                                
+             1 Exciting                                                                                            
+             1 Exciting                                                                                            
+             1 Kindly                                                                                              
+             1 Kindly                                                                                              
+             2 Putrid                                                                                              
+             2 Putrid                                                                                              
+             2 Trim                                                                                                
+             2 Trim                                                                                                
+             2 Unique                                                                                              
+
+Hodiny učitele JMENO                                                                                               
+-------------- ----------------------------------------------------------------------------------------------------
+             2 Unique                                                                                              
+             9                                                                                                     
+             6                                                                                                     
+             3                                                                                                     
+
+15 rows selected. 
+
+Explain Plan
+-----------------------------------------------------------
+
+PLAN_TABLE_OUTPUT                                                                                                                                                                                                                                                                                           
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Plan hash value: 2611315498
+ 
+---------------------------------------------------------------------------------------------------
+| Id  | Operation                        | Name           | Rows  | Bytes | Cost (%CPU)| Time     |
+---------------------------------------------------------------------------------------------------
+|   0 | SELECT STATEMENT                 |                |   200 | 22600 |     7  (29)| 00:00:01 |
+|   1 |  SORT ORDER BY                   |                |   200 | 22600 |     7  (29)| 00:00:01 |
+|   2 |   SORT GROUP BY                  |                |   200 | 22600 |     7  (29)| 00:00:01 |
+|   3 |    GENERATE CUBE                 |                |   200 | 22600 |     7  (29)| 00:00:01 |
+|   4 |     SORT GROUP BY                |                |   200 | 22600 |     7  (29)| 00:00:01 |
+|   5 |      NESTED LOOPS                |                |       |       |            |          |
+
+PLAN_TABLE_OUTPUT                                                                                                                                                                                                                                                                                           
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+|   6 |       NESTED LOOPS               |                |   200 | 22600 |     5   (0)| 00:00:01 |
+|*  7 |        TABLE ACCESS FULL         | ROZVRHOVA_AKCE |  1195 | 57360 |     5   (0)| 00:00:01 |
+|*  8 |        INDEX UNIQUE SCAN         | UCITEL_PK      |     1 |       |     0   (0)| 00:00:01 |
+|   9 |       TABLE ACCESS BY INDEX ROWID| UCITEL         |     1 |    65 |     0   (0)| 00:00:01 |
+---------------------------------------------------------------------------------------------------
+ 
+Predicate Information (identified by operation id):
+---------------------------------------------------
+ 
+   7 - filter("R"."DATUM">TO_DATE('01.01.21','DD.MM.RR'))
+   8 - access("R"."UCITEL_ID"="U"."ID")
+
+PLAN_TABLE_OUTPUT                                                                                                                                                                                                                                                                                           
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+       filter("R"."PREDMET_ID"="U"."ID")
+ 
+Note
+-----
+   - dynamic sampling used for this statement (level=2)
+
+Unable to gather statistics please ensure user has correct access.
+The statistic feature requires that the user is granted select on v_$sesstat, v_$statname and v_$session.
+SQL> 
+SQL> -- Seznam počtu studentů předmětu v zimním semestru v období od 1. ledna do 1. března, agregováno podle názvu předmětu
+SQL> select p.nazev, count(r.pocetStudentu) as "Počet studentů" from rozvrhova_akce r join predmet p on p.id = r.predmet_id 
+  2  join kategorie k on k.id = r.kategorie_id where k.semestr = 'Zimní' 
+  3  and r.datum > to_date('01.01.21','DD.MM.RR') and r.datum < to_date('01.03.21','DD.MM.RR') 
+  4  group by ROLLUP(p.nazev)
+
+NAZEV                                                                                                Počet studentů
+---------------------------------------------------------------------------------------------------- --------------
+0Oa                                                                                                               2
+0aR6kPa                                                                                                           1
+1CING8uXa                                                                                                         2
+1dmR9                                                                                                             3
+4HsH                                                                                                              1
+4Vx2UQ                                                                                                            1
+4ne                                                                                                               1
+52sb9OOQW                                                                                                         1
+5SWjZ8jO                                                                                                          1
+5UQl9wy                                                                                                           1
+9eGrmTP                                                                                                           1
+
+NAZEV                                                                                                Počet studentů
+---------------------------------------------------------------------------------------------------- --------------
+9z                                                                                                                1
+AClU                                                                                                              2
+BhuhjBmmt                                                                                                         1
+CSPpqGB                                                                                                           1
+Cqc6xm                                                                                                            1
+EYHIkI                                                                                                            1
+FFeCbsjI                                                                                                          1
+HSaRvmI                                                                                                           1
+HwB                                                                                                               2
+I0eC1                                                                                                             1
+IbVokGFs                                                                                                          2
+
+NAZEV                                                                                                Počet studentů
+---------------------------------------------------------------------------------------------------- --------------
+K3OE8                                                                                                             1
+K7                                                                                                                1
+LyfA1                                                                                                             1
+P2i6fkd                                                                                                           1
+RDxx                                                                                                              1
+RTd                                                                                                               1
+RvlTz                                                                                                             2
+TgTYsEr2a                                                                                                         1
+UxDExFZ                                                                                                           1
+WAcH1x5N                                                                                                          1
+X6bbXRq2h                                                                                                         1
+
+NAZEV                                                                                                Počet studentů
+---------------------------------------------------------------------------------------------------- --------------
+XK6uMl                                                                                                            1
+XO2I79AYT                                                                                                         1
+XhULZptpn                                                                                                         1
+XrIfLPKF                                                                                                          1
+Xu                                                                                                                1
+YQzW                                                                                                              2
+ZiPfV                                                                                                             2
+Zp                                                                                                                3
+aZytWR                                                                                                            1
+dBhl2sF                                                                                                           1
+dFPtk1                                                                                                            1
+
+NAZEV                                                                                                Počet studentů
+---------------------------------------------------------------------------------------------------- --------------
+dc9Ua2h                                                                                                           1
+dm9tv                                                                                                             1
+gEzPg                                                                                                             1
+gU6XH                                                                                                             1
+hPUb                                                                                                              1
+hXeZNWdk                                                                                                          1
+ieyWW98                                                                                                           1
+ijCFC8d                                                                                                           1
+j4O0cFUl                                                                                                          2
+jOi5ZSi                                                                                                           1
+jd97N                                                                                                             1
+
+NAZEV                                                                                                Počet studentů
+---------------------------------------------------------------------------------------------------- --------------
+jkcsI                                                                                                             2
+jmm                                                                                                               1
+k8i9u3w                                                                                                           1
+k991Sipi1                                                                                                         1
+lQD6p                                                                                                             1
+ln1AI                                                                                                             1
+nNJO                                                                                                              1
+pG                                                                                                                1
+pg79sx                                                                                                            1
+qJ5t                                                                                                              2
+r9E2q6                                                                                                            1
+
+NAZEV                                                                                                Počet studentů
+---------------------------------------------------------------------------------------------------- --------------
+sS9FwWnUe                                                                                                         2
+so                                                                                                                1
+t5yePk                                                                                                            1
+u6w                                                                                                               1
+ul5MP0Jqc                                                                                                         1
+vQ                                                                                                                1
+vcLZDG4K                                                                                                          1
+wOvVWwA8L                                                                                                         3
+weB5ZcSu                                                                                                          1
+xLOZ                                                                                                              2
+xhyrd0gRt                                                                                                         1
+
+NAZEV                                                                                                Počet studentů
+---------------------------------------------------------------------------------------------------- --------------
+xrCbG                                                                                                             1
+yAghZNF                                                                                                           1
+                                                                                                                 98
+
+80 rows selected. 
+
+Explain Plan
+-----------------------------------------------------------
+
+PLAN_TABLE_OUTPUT                                                                                                                                                                                                                                                                                           
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Plan hash value: 12351147
+ 
+---------------------------------------------------------------------------------------------------
+| Id  | Operation                        | Name           | Rows  | Bytes | Cost (%CPU)| Time     |
+---------------------------------------------------------------------------------------------------
+|   0 | SELECT STATEMENT                 |                |   155 | 21700 |     6  (17)| 00:00:01 |
+|   1 |  SORT GROUP BY ROLLUP            |                |   155 | 21700 |     6  (17)| 00:00:01 |
+|*  2 |   FILTER                         |                |       |       |            |          |
+|   3 |    NESTED LOOPS                  |                |       |       |            |          |
+|   4 |     NESTED LOOPS                 |                |   155 | 21700 |     5   (0)| 00:00:01 |
+|   5 |      NESTED LOOPS                |                |   155 | 11625 |     5   (0)| 00:00:01 |
+
+PLAN_TABLE_OUTPUT                                                                                                                                                                                                                                                                                           
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+|*  6 |       TABLE ACCESS FULL          | ROZVRHOVA_AKCE |   190 |  6650 |     5   (0)| 00:00:01 |
+|*  7 |       TABLE ACCESS BY INDEX ROWID| KATEGORIE      |     1 |    40 |     0   (0)| 00:00:01 |
+|*  8 |        INDEX UNIQUE SCAN         | KATEGORIE_PK   |     1 |       |     0   (0)| 00:00:01 |
+|*  9 |      INDEX UNIQUE SCAN           | PREDMET_PK     |     1 |       |     0   (0)| 00:00:01 |
+|  10 |     TABLE ACCESS BY INDEX ROWID  | PREDMET        |     1 |    65 |     0   (0)| 00:00:01 |
+---------------------------------------------------------------------------------------------------
+ 
+Predicate Information (identified by operation id):
+---------------------------------------------------
+ 
+   2 - filter(TO_DATE('01.01.21','DD.MM.RR')<TO_DATE('01.03.21','DD.MM.RR'))
+
+PLAN_TABLE_OUTPUT                                                                                                                                                                                                                                                                                           
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+   6 - filter("R"."DATUM">TO_DATE('01.01.21','DD.MM.RR') AND 
+              "R"."DATUM"<TO_DATE('01.03.21','DD.MM.RR'))
+   7 - filter("K"."SEMESTR"='Zimní')
+   8 - access("K"."ID"="R"."KATEGORIE_ID")
+   9 - access("P"."ID"="R"."PREDMET_ID")
+ 
+Note
+-----
+   - dynamic sampling used for this statement (level=2)
+
+Unable to gather statistics please ensure user has correct access.
+The statistic feature requires that the user is granted select on v_$sesstat, v_$statname and v_$session.
